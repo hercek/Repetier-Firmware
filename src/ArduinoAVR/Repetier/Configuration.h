@@ -134,7 +134,7 @@ is a full cartesian system where x, y and z moves are handled by separate motors
 Cases 1, 2, 8 and 9 cover all needed xy and xz H gantry systems. If you get results mirrored etc. you can swap motor connections for x and y.
 If a motor turns in the wrong direction change INVERT_X_DIR or INVERT_Y_DIR.
 */
-#define DRIVE_SYSTEM 0
+#define DRIVE_SYSTEM 3
 /*
   Normal core xy implementation needs 2 virtual steps for a motor step to guarantee
   that every tiny move gets maximum one step regardless of direction. This can cost
@@ -1026,6 +1026,7 @@ on this endstop.
 
 /*  =========== Parameter essential for delta calibration ===================
 
+         (xc,-2*ya)
             C, Y-Axis
             |                        |___| CARRIAGE_HORIZONTAL_OFFSET (recommend set it to 0)
             |                        |   \------------------------------------------
@@ -1034,7 +1035,7 @@ on this endstop.
           /   \                             \                                 is calculated
          /     \                             \    Carriage is at printer center!   |
          A      B                             \_____/--------------------------------
-                                              |--| END_EFFECTOR_HORIZONTAL_OFFSET (recommend set it to 0)
+     (xa,ya)  (-xa,ya)                        |--| END_EFFECTOR_HORIZONTAL_OFFSET (recommend set it to 0)
                                          |----| ROD_RADIUS (Horizontal rod pivot to pivot measure)
                                      |-----------| PRINTER_RADIUS (recommend set it to ROD_RADIUS)
 
@@ -1042,20 +1043,24 @@ on this endstop.
     "Standard" positions: alpha_A = 210, alpha_B = 330, alpha_C = 90
 */
 
-/** \brief column positions - change only to correct build imperfections! */
-#define DELTA_ALPHA_A 210
-#define DELTA_ALPHA_B 330
-#define DELTA_ALPHA_C 90
+/** \brief column positions - only XY coordinates of A tower and X coordinate of C tower are needed! */
+#define DELTA_TOWER_A_XPOS        -116.91343
+#define DELTA_TOWER_A_YPOS        -57.5
+#define DELTA_TOWER_C_XPOS        0
 
-/** Correct radius by this value for each column. Perfect builds have 0 everywhere. */
-#define DELTA_RADIUS_CORRECTION_A 0
-#define DELTA_RADIUS_CORRECTION_B 0
-#define DELTA_RADIUS_CORRECTION_C 0
+/** Delta diagonal size. One for each tower.*/
+#define DELTA_DIAGONAL_ROD_A 345
+#define DELTA_DIAGONAL_ROD_B 345
+#define DELTA_DIAGONAL_ROD_C 345
 
-/** Correction of the default diagonal size. Value gets added.*/
-#define DELTA_DIAGONAL_CORRECTION_A 0
-#define DELTA_DIAGONAL_CORRECTION_B 0
-#define DELTA_DIAGONAL_CORRECTION_C 0
+/** \breef Tower tilts X and Y tilt for each tower.
+  How many units a tower is tilted in the direction of a cartesian coordinate per one uint of tower length. */
+#define DELTA_TOWER_A_XTILT      0
+#define DELTA_TOWER_A_YTILT      0
+#define DELTA_TOWER_B_XTILT      0
+#define DELTA_TOWER_B_YTILT      0
+#define DELTA_TOWER_C_XTILT      0
+#define DELTA_TOWER_C_YTILT      0
 
 /** Max. radius (mm) the printer should be able to reach. */
 #define DELTA_MAX_RADIUS 200
@@ -1071,17 +1076,7 @@ on this endstop.
 
 /** \brief Horizontal offset of the universal joints on the end effector (moving platform).
 */
-#define END_EFFECTOR_HORIZONTAL_OFFSET 0
-
-/** \brief Horizontal offset of the universal joints on the vertical carriages.
-*/
-#define CARRIAGE_HORIZONTAL_OFFSET 0
-
-/** \brief Printer radius in mm,
-  measured from the center of the print area to the vertical smooth tower.
-  Alternately set this to the pivot to pivot horizontal rod distance, when head is at (0,0)
-*/
-#define PRINTER_RADIUS 124
+#define END_EFFECTOR_HORIZONTAL_OFFSET 30
 
 /** 1 for more precise delta moves. 0 for faster computation.
 Needs a bit more computation time. */
@@ -2003,4 +1998,3 @@ If you have leveling with bed coating or fixed z min you can use this menu to ad
 //#define CUSTOM_EVENTS
 
 #endif
-

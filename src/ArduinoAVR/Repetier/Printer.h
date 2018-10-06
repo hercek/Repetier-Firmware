@@ -113,6 +113,7 @@ union wizardVar {
 #define PRINTER_FLAG3_AUTOREPORT_TEMP       16
 #define PRINTER_FLAG3_SUPPORTS_STARTSTOP    32
 #define PRINTER_FLAG3_DOOR_OPEN             64
+#define PRINTER_FLAG3_IGNORE_TOWER_TILT     128
 
 // List of possible interrupt events (1-255 allowed)
 #define PRINTER_INTERRUPT_EVENT_JAM_DETECTED 1
@@ -305,10 +306,18 @@ public:
     static int32_t deltaBPosYSteps;
     static int32_t deltaCPosXSteps;
     static int32_t deltaCPosYSteps;
+    static int32_t deltaATiltX;
+    static int32_t deltaATiltY;
+    static int32_t deltaATiltXY;
+    static int32_t deltaBTiltX;
+    static int32_t deltaBTiltY;
+    static int32_t deltaBTiltXY;
+    static int32_t deltaCTiltX;
+    static int32_t deltaCTiltY;
+    static int32_t deltaCTiltXY;
     static int32_t realDeltaPositionSteps[TOWER_ARRAY];
     static int16_t travelMovesPerSecond;
     static int16_t printMovesPerSecond;
-    static float radius0;
 #endif
 #if !NONLINEAR_SYSTEM || defined(FAST_COREXYZ) || defined(DOXYGEN)
     static int32_t xMinStepsAdj, yMinStepsAdj, zMinStepsAdj; // adjusted to cover extruder/probe offsets
@@ -802,6 +811,14 @@ public:
 
     static INLINE uint8_t isDoorOpen() {
         return (flag3 & PRINTER_FLAG3_DOOR_OPEN) != 0;
+    }
+
+    static INLINE uint8_t canIgnoreTowerTilt() {
+        return (flag3 & PRINTER_FLAG3_IGNORE_TOWER_TILT) != 0;
+    }
+
+    static INLINE void setIgnoreTowerTilt(uint8_t b) {
+        flag3 = (b ? flag3 | PRINTER_FLAG3_IGNORE_TOWER_TILT : flag3 & ~PRINTER_FLAG3_IGNORE_TOWER_TILT);
     }
 
     static bool updateDoorOpen();

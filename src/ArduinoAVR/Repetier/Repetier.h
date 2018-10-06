@@ -368,7 +368,7 @@ inline void memcopy4(void *dest,void *source) {
 /**  \brief Horizontal distance bridged by the diagonal push rod when the end effector is in the center. It is pretty close to 50% of the push rod length (250 mm).
 */
 #if !defined(ROD_RADIUS) && DRIVE_SYSTEM == DELTA
-#define ROD_RADIUS (PRINTER_RADIUS-END_EFFECTOR_HORIZONTAL_OFFSET-CARRIAGE_HORIZONTAL_OFFSET)
+#define ROD_RADIUS (2*DELTA_TOWER_A_YPOS)
 #endif
 
 #ifndef UI_SPEEDDEPENDENT_POSITIONING
@@ -936,6 +936,7 @@ void manage_inactivity(uint8_t debug);
 extern void finishNextSegment();
 #if NONLINEAR_SYSTEM
 extern uint8_t transformCartesianStepsToDeltaSteps(long cartesianPosSteps[], long deltaPosSteps[]);
+extern uint8_t initializeCartesianStepsAfterHoming(int32_t cartesianPosSteps[]);
 #if SOFTWARE_LEVELING
 extern void calculatePlane(long factors[], long p1[], long p2[], long p3[]);
 extern float calcZOffset(long factors[], long pointX, long pointY);

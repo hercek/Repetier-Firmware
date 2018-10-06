@@ -110,13 +110,6 @@ void EEPROM::restoreEEPROMSettingsFromConfiguration()
     Printer::xMin = X_MIN_POS;
     Printer::yMin = Y_MIN_POS;
     Printer::zMin = Z_MIN_POS;
-#if NONLINEAR_SYSTEM
-#ifdef ROD_RADIUS
-	Printer::radius0 = ROD_RADIUS;
-#else
-	Printer::radius0 = 0;
-#endif	
-#endif
 #if ENABLE_BACKLASH_COMPENSATION
     Printer::backlashX = X_BACKLASH;
     Printer::backlashY = Y_BACKLASH;
@@ -380,9 +373,6 @@ void EEPROM::storeDataIntoEEPROM(uint8_t corrupted)
     HAL::eprSetFloat(EPR_X_LENGTH,Printer::xLength);
     HAL::eprSetFloat(EPR_Y_LENGTH,Printer::yLength);
     HAL::eprSetFloat(EPR_Z_LENGTH,Printer::zLength);
-#if NONLINEAR_SYSTEM
-    HAL::eprSetFloat(EPR_DELTA_HORIZONTAL_RADIUS, Printer::radius0);
-#endif
 #if ENABLE_BACKLASH_COMPENSATION
     HAL::eprSetFloat(EPR_BACKLASH_X,Printer::backlashX);
     HAL::eprSetFloat(EPR_BACKLASH_Y,Printer::backlashY);
@@ -476,28 +466,29 @@ void EEPROM::initalizeUncached()
     HAL::eprSetFloat(EPR_AXISCOMP_TANXY,AXISCOMP_TANXY);
     HAL::eprSetFloat(EPR_AXISCOMP_TANYZ,AXISCOMP_TANYZ);
     HAL::eprSetFloat(EPR_AXISCOMP_TANXZ,AXISCOMP_TANXZ);
-    HAL::eprSetFloat(EPR_Z_PROBE_BED_DISTANCE,Z_PROBE_BED_DISTANCE);
+    HAL::eprSetInt16(EPR_Z_PROBE_BED_DISTANCE_STEPS,Z_PROBE_BED_DISTANCE*ZAXIS_STEPS_PER_MM);
     Printer::zBedOffset = HAL::eprGetFloat(EPR_Z_PROBE_Z_OFFSET);
 	#if NONLINEAR_SYSTEM
     HAL::eprSetInt16(EPR_DELTA_SEGMENTS_PER_SECOND_PRINT,DELTA_SEGMENTS_PER_SECOND_PRINT);
     HAL::eprSetInt16(EPR_DELTA_SEGMENTS_PER_SECOND_MOVE,DELTA_SEGMENTS_PER_SECOND_MOVE);
 	#endif
 #if DRIVE_SYSTEM == DELTA
-    HAL::eprSetFloat(EPR_DELTA_DIAGONAL_ROD_LENGTH,DELTA_DIAGONAL_ROD);
-    HAL::eprSetFloat(EPR_DELTA_HORIZONTAL_RADIUS,ROD_RADIUS);
     HAL::eprSetInt16(EPR_DELTA_TOWERX_OFFSET_STEPS,DELTA_X_ENDSTOP_OFFSET_STEPS);
     HAL::eprSetInt16(EPR_DELTA_TOWERY_OFFSET_STEPS,DELTA_Y_ENDSTOP_OFFSET_STEPS);
     HAL::eprSetInt16(EPR_DELTA_TOWERZ_OFFSET_STEPS,DELTA_Z_ENDSTOP_OFFSET_STEPS);
-    HAL::eprSetFloat(EPR_DELTA_ALPHA_A,DELTA_ALPHA_A);
-    HAL::eprSetFloat(EPR_DELTA_ALPHA_B,DELTA_ALPHA_B);
-    HAL::eprSetFloat(EPR_DELTA_ALPHA_C,DELTA_ALPHA_C);
-    HAL::eprSetFloat(EPR_DELTA_RADIUS_CORR_A,DELTA_RADIUS_CORRECTION_A);
-    HAL::eprSetFloat(EPR_DELTA_RADIUS_CORR_B,DELTA_RADIUS_CORRECTION_B);
-    HAL::eprSetFloat(EPR_DELTA_RADIUS_CORR_C,DELTA_RADIUS_CORRECTION_C);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_A_XPOS,DELTA_TOWER_A_XPOS);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_A_YPOS,DELTA_TOWER_A_YPOS);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_C_XPOS,DELTA_TOWER_C_XPOS);
+    HAL::eprSetFloat(EPR_DELTA_DIAGONAL_A,DELTA_DIAGONAL_ROD_A);
+    HAL::eprSetFloat(EPR_DELTA_DIAGONAL_B,DELTA_DIAGONAL_ROD_B);
+    HAL::eprSetFloat(EPR_DELTA_DIAGONAL_C,DELTA_DIAGONAL_ROD_C);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_A_XTILT,DELTA_TOWER_A_XTILT);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_A_YTILT,DELTA_TOWER_A_YTILT);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_B_XTILT,DELTA_TOWER_B_XTILT);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_B_YTILT,DELTA_TOWER_B_YTILT);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_C_XTILT,DELTA_TOWER_C_XTILT);
+    HAL::eprSetFloat(EPR_DELTA_TOWER_C_YTILT,DELTA_TOWER_C_YTILT);
     HAL::eprSetFloat(EPR_DELTA_MAX_RADIUS,DELTA_MAX_RADIUS);
-    HAL::eprSetFloat(EPR_DELTA_DIAGONAL_CORRECTION_A,DELTA_DIAGONAL_CORRECTION_A);
-    HAL::eprSetFloat(EPR_DELTA_DIAGONAL_CORRECTION_B,DELTA_DIAGONAL_CORRECTION_B);
-    HAL::eprSetFloat(EPR_DELTA_DIAGONAL_CORRECTION_C,DELTA_DIAGONAL_CORRECTION_C);
 #endif
     HAL::eprSetFloat(EPR_AXISCOMP_TANXY,AXISCOMP_TANXY);
     HAL::eprSetFloat(EPR_AXISCOMP_TANYZ,AXISCOMP_TANYZ);
@@ -573,9 +564,6 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
     Printer::xLength = HAL::eprGetFloat(EPR_X_LENGTH);
     Printer::yLength = HAL::eprGetFloat(EPR_Y_LENGTH);
     Printer::zLength = HAL::eprGetFloat(EPR_Z_LENGTH);
-#if NONLINEAR_SYSTEM
-    Printer::radius0 = HAL::eprGetFloat(EPR_DELTA_HORIZONTAL_RADIUS);
-#endif
 #if ENABLE_BACKLASH_COMPENSATION
     Printer::backlashX = HAL::eprGetFloat(EPR_BACKLASH_X);
     Printer::backlashY = HAL::eprGetFloat(EPR_BACKLASH_Y);
@@ -676,37 +664,20 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
             HAL::eprSetInt16(EPR_DELTA_SEGMENTS_PER_SECOND_MOVE,DELTA_SEGMENTS_PER_SECOND_MOVE);
 #endif			
 #if DRIVE_SYSTEM == DELTA
-            HAL::eprSetFloat(EPR_DELTA_DIAGONAL_ROD_LENGTH,DELTA_DIAGONAL_ROD);
-            HAL::eprSetFloat(EPR_DELTA_HORIZONTAL_RADIUS,ROD_RADIUS);
             HAL::eprSetInt16(EPR_DELTA_TOWERX_OFFSET_STEPS,DELTA_X_ENDSTOP_OFFSET_STEPS);
             HAL::eprSetInt16(EPR_DELTA_TOWERY_OFFSET_STEPS,DELTA_Y_ENDSTOP_OFFSET_STEPS);
             HAL::eprSetInt16(EPR_DELTA_TOWERZ_OFFSET_STEPS,DELTA_Z_ENDSTOP_OFFSET_STEPS);
 #endif
         }
 #if DRIVE_SYSTEM == DELTA
-        if(version < 5)
-        {
-            HAL::eprSetFloat(EPR_DELTA_ALPHA_A,DELTA_ALPHA_A);
-            HAL::eprSetFloat(EPR_DELTA_ALPHA_B,DELTA_ALPHA_B);
-            HAL::eprSetFloat(EPR_DELTA_ALPHA_C,DELTA_ALPHA_C);
-        }
-        if(version < 6)
-        {
-            HAL::eprSetFloat(EPR_DELTA_RADIUS_CORR_A,DELTA_RADIUS_CORRECTION_A);
-            HAL::eprSetFloat(EPR_DELTA_RADIUS_CORR_B,DELTA_RADIUS_CORRECTION_B);
-            HAL::eprSetFloat(EPR_DELTA_RADIUS_CORR_C,DELTA_RADIUS_CORRECTION_C);
-        }
         if(version < 7)
         {
             HAL::eprSetFloat(EPR_DELTA_MAX_RADIUS,DELTA_MAX_RADIUS);
-            HAL::eprSetFloat(EPR_DELTA_DIAGONAL_CORRECTION_A,DELTA_DIAGONAL_CORRECTION_A);
-            HAL::eprSetFloat(EPR_DELTA_DIAGONAL_CORRECTION_B,DELTA_DIAGONAL_CORRECTION_B);
-            HAL::eprSetFloat(EPR_DELTA_DIAGONAL_CORRECTION_C,DELTA_DIAGONAL_CORRECTION_C);
         }
 #endif
         if(version < 8)
         {
-            HAL::eprSetFloat(EPR_Z_PROBE_BED_DISTANCE,Z_PROBE_BED_DISTANCE);
+            HAL::eprSetInt16(EPR_Z_PROBE_BED_DISTANCE_STEPS,Z_PROBE_BED_DISTANCE*ZAXIS_STEPS_PER_MM);
         }
         if(version < 9)
         {
@@ -800,6 +771,20 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
                 }*/
 
         storeDataIntoEEPROM(false); // Store new fields for changed version
+        if(version < 20) {
+            HAL::eprSetFloat(EPR_DELTA_TOWER_A_XPOS,DELTA_TOWER_A_XPOS);
+            HAL::eprSetFloat(EPR_DELTA_TOWER_A_YPOS,DELTA_TOWER_A_YPOS);
+            HAL::eprSetFloat(EPR_DELTA_TOWER_C_XPOS,DELTA_TOWER_C_XPOS);
+            HAL::eprSetFloat(EPR_DELTA_DIAGONAL_A,DELTA_DIAGONAL_ROD_A);
+            HAL::eprSetFloat(EPR_DELTA_DIAGONAL_B,DELTA_DIAGONAL_ROD_B);
+            HAL::eprSetFloat(EPR_DELTA_DIAGONAL_C,DELTA_DIAGONAL_ROD_C);
+            HAL::eprSetFloat(EPR_DELTA_TOWER_A_XTILT,DELTA_TOWER_A_XTILT);
+            HAL::eprSetFloat(EPR_DELTA_TOWER_A_YTILT,DELTA_TOWER_A_YTILT);
+            HAL::eprSetFloat(EPR_DELTA_TOWER_B_XTILT,DELTA_TOWER_B_XTILT);
+            HAL::eprSetFloat(EPR_DELTA_TOWER_B_YTILT,DELTA_TOWER_B_YTILT);
+            HAL::eprSetFloat(EPR_DELTA_TOWER_C_XTILT,DELTA_TOWER_C_XTILT);
+            HAL::eprSetFloat(EPR_DELTA_TOWER_C_YTILT,DELTA_TOWER_C_YTILT);
+        }
     }
     Printer::zBedOffset = HAL::eprGetFloat(EPR_Z_PROBE_Z_OFFSET);
 #if UI_DISPLAY_TYPE != NO_DISPLAY
@@ -942,7 +927,7 @@ writeFloat(EPR_X2AXIS_STEPS_PER_MM, Com::tEPRX2StepsPerMM, 4);
     //epr_out_float(EPR_Y_MAX_START_SPEED,PSTR("Y-axis start speed [mm/s]"));
     //epr_out_float(EPR_Z_MAX_START_SPEED,PSTR("Z-axis start speed [mm/s]"));
 #if DRIVE_SYSTEM == TUGA
-    writeFloat(EPR_DELTA_DIAGONAL_ROD_LENGTH, Com::tEPRDiagonalRodLength);
+    writeFloat(EPR_DELTA_DIAGONAL_B, Com::tEPRDiagonalRodLength);
 #endif
 #if DRIVE_SYSTEM == DELTA
     writeFloat(EPR_Z_MAX_ACCEL, Com::tEPRZAcceleration);
@@ -950,21 +935,22 @@ writeFloat(EPR_X2AXIS_STEPS_PER_MM, Com::tEPRX2StepsPerMM, 4);
 #if defined(INTERPOLATE_ACCELERATION_WITH_Z) && INTERPOLATE_ACCELERATION_WITH_Z != 0
     writeFloat(EPR_ACCELERATION_FACTOR_TOP, Com::tEPRAccelerationFactorAtTop);
 #endif
-    writeFloat(EPR_DELTA_DIAGONAL_ROD_LENGTH, Com::tEPRDiagonalRodLength);
-    writeFloat(EPR_DELTA_HORIZONTAL_RADIUS, Com::tEPRHorizontalRadius);
-    writeFloat(EPR_DELTA_MAX_RADIUS, Com::tEPRDeltaMaxRadius);
     writeInt(EPR_DELTA_TOWERX_OFFSET_STEPS, Com::tEPRTowerXOffset);
     writeInt(EPR_DELTA_TOWERY_OFFSET_STEPS, Com::tEPRTowerYOffset);
     writeInt(EPR_DELTA_TOWERZ_OFFSET_STEPS, Com::tEPRTowerZOffset);
-    writeFloat(EPR_DELTA_ALPHA_A, Com::tDeltaAlphaA);
-    writeFloat(EPR_DELTA_ALPHA_B, Com::tDeltaAlphaB);
-    writeFloat(EPR_DELTA_ALPHA_C, Com::tDeltaAlphaC);
-    writeFloat(EPR_DELTA_RADIUS_CORR_A, Com::tDeltaRadiusCorrectionA);
-    writeFloat(EPR_DELTA_RADIUS_CORR_B, Com::tDeltaRadiusCorrectionB);
-    writeFloat(EPR_DELTA_RADIUS_CORR_C, Com::tDeltaRadiusCorrectionC);
-    writeFloat(EPR_DELTA_DIAGONAL_CORRECTION_A, Com::tDeltaDiagonalCorrectionA);
-    writeFloat(EPR_DELTA_DIAGONAL_CORRECTION_B, Com::tDeltaDiagonalCorrectionB);
-    writeFloat(EPR_DELTA_DIAGONAL_CORRECTION_C, Com::tDeltaDiagonalCorrectionC);
+    writeFloat(EPR_DELTA_TOWER_A_XPOS, Com::tDeltaTowerA_xPos);
+    writeFloat(EPR_DELTA_TOWER_A_YPOS, Com::tDeltaTowerA_yPos);
+    writeFloat(EPR_DELTA_TOWER_C_XPOS, Com::tDeltaTowerC_xPos);
+    writeFloat(EPR_DELTA_DIAGONAL_A, Com::tDeltaDiagonalA);
+    writeFloat(EPR_DELTA_DIAGONAL_B, Com::tDeltaDiagonalB);
+    writeFloat(EPR_DELTA_DIAGONAL_C, Com::tDeltaDiagonalC);
+    writeFloat(EPR_DELTA_TOWER_A_XTILT, Com::tDeltaTowerA_xTilt);
+    writeFloat(EPR_DELTA_TOWER_A_YTILT, Com::tDeltaTowerA_yTilt);
+    writeFloat(EPR_DELTA_TOWER_B_XTILT, Com::tDeltaTowerB_xTilt);
+    writeFloat(EPR_DELTA_TOWER_B_YTILT, Com::tDeltaTowerB_yTilt);
+    writeFloat(EPR_DELTA_TOWER_C_XTILT, Com::tDeltaTowerC_xTilt);
+    writeFloat(EPR_DELTA_TOWER_C_YTILT, Com::tDeltaTowerC_yTilt);
+    writeFloat(EPR_DELTA_MAX_RADIUS, Com::tEPRDeltaMaxRadius);
 #else
     writeFloat(EPR_X_MAX_ACCEL, Com::tEPRXAcceleration);
     writeFloat(EPR_Y_MAX_ACCEL, Com::tEPRYAcceleration);
@@ -980,7 +966,7 @@ writeFloat(EPR_X2AXIS_STEPS_PER_MM, Com::tEPRX2StepsPerMM, 4);
     writeFloat(EPR_Z_PROBE_Z_OFFSET, Com::tZProbeOffsetZ);
 #if FEATURE_Z_PROBE
     writeFloat(EPR_Z_PROBE_HEIGHT, Com::tZProbeHeight);
-    writeFloat(EPR_Z_PROBE_BED_DISTANCE, Com::tZProbeBedDitance);
+    writeInt(EPR_Z_PROBE_BED_DISTANCE_STEPS, Com::tZProbeBedDitance);
     writeFloat(EPR_Z_PROBE_SPEED, Com::tZProbeSpeed);
     writeFloat(EPR_Z_PROBE_XY_SPEED, Com::tZProbeSpeedXY);
     writeFloat(EPR_Z_PROBE_X_OFFSET, Com::tZProbeOffsetX);

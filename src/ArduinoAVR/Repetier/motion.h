@@ -688,8 +688,10 @@ public:
     }
 #if NONLINEAR_SYSTEM || defined(DOXYGEN)
     static uint8_t queueNonlinearMove(uint8_t check_endstops, uint8_t pathOptimize, uint8_t softEndstop);
+    static void doNonlinearDownMove(uint16_t nonLinearDelta[3], float feedrate);
     static inline void queueEMove(int32_t e_diff, uint8_t check_endstops, uint8_t pathOptimize);
     inline uint16_t calculateNonlinearSubSegments(uint8_t softEndstop);
+    inline void initNonlinearSubSegment(uint16_t nonLinearDelta[3]);
     static inline void calculateDirectionAndDelta(int32_t difference[], ufast8_t *dir, int32_t delta[]);
     static inline uint8_t calculateDistance(float axis_diff[], uint8_t dir, float *distance);
 #if (SOFTWARE_LEVELING && DRIVE_SYSTEM == DELTA) || defined(DOXYGEN)

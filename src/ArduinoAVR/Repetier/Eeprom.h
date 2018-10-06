@@ -87,24 +87,31 @@ have problems with other modules using the eeprom */
 #define EPR_Z_PROBE_XY_SPEED      840
 #define EPR_AUTOLEVEL_MATRIX      844
 #define EPR_AUTOLEVEL_ACTIVE      880
-#define EPR_DELTA_DIAGONAL_ROD_LENGTH 881
-#define EPR_DELTA_HORIZONTAL_RADIUS 885
-#define EPR_DELTA_SEGMENTS_PER_SECOND_PRINT 889
-#define EPR_DELTA_SEGMENTS_PER_SECOND_MOVE 891
-#define EPR_DELTA_TOWERX_OFFSET_STEPS 893
-#define EPR_DELTA_TOWERY_OFFSET_STEPS 895
-#define EPR_DELTA_TOWERZ_OFFSET_STEPS 897
-#define EPR_DELTA_ALPHA_A         901
-#define EPR_DELTA_ALPHA_B         905
-#define EPR_DELTA_ALPHA_C         909
-#define EPR_DELTA_RADIUS_CORR_A   913
-#define EPR_DELTA_RADIUS_CORR_B   917
-#define EPR_DELTA_RADIUS_CORR_C   921
-#define EPR_DELTA_MAX_RADIUS      925
-#define EPR_Z_PROBE_BED_DISTANCE  929
-#define EPR_DELTA_DIAGONAL_CORRECTION_A 933
-#define EPR_DELTA_DIAGONAL_CORRECTION_B 937
-#define EPR_DELTA_DIAGONAL_CORRECTION_C 941
+// 1 byte padding @ 881
+#define EPR_DELTA_SEGMENTS_PER_SECOND_PRINT 882
+#define EPR_DELTA_SEGMENTS_PER_SECOND_MOVE  884
+// endstop offsets: oas, obs, ocs             //6 bytes
+#define EPR_DELTA_TOWERX_OFFSET_STEPS 886
+#define EPR_DELTA_TOWERY_OFFSET_STEPS 888
+#define EPR_DELTA_TOWERZ_OFFSET_STEPS 890
+// tower position:  xa, ya, xc                //12 bytes
+#define EPR_DELTA_TOWER_A_XPOS        892
+#define EPR_DELTA_TOWER_A_YPOS        896
+#define EPR_DELTA_TOWER_C_XPOS        900
+// diagonal rods:   ra, rb, rc                //12 bytes
+#define EPR_DELTA_DIAGONAL_A          904
+#define EPR_DELTA_DIAGONAL_B          908
+#define EPR_DELTA_DIAGONAL_C          912
+// tower tilts:     dxa,dya, dxb,dyb, dxc,dyc //24 bytes
+#define EPR_DELTA_TOWER_A_XTILT       916
+#define EPR_DELTA_TOWER_A_YTILT       920
+#define EPR_DELTA_TOWER_B_XTILT       924
+#define EPR_DELTA_TOWER_B_YTILT       928
+#define EPR_DELTA_TOWER_C_XTILT       932
+#define EPR_DELTA_TOWER_C_YTILT       936
+// max printing radius z-probe return length //6 bytes
+#define EPR_DELTA_MAX_RADIUS          940
+#define EPR_Z_PROBE_BED_DISTANCE_STEPS 944
 #define EPR_TOUCHSCREEN           946 // - 975 = 30 byte for touchscreen calibration data
 
 // Axis compensation
@@ -312,7 +319,7 @@ static inline void setZProbeHeight(float mm) {
     }
     static inline float zProbeBedDistance() {
 #if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_Z_PROBE_BED_DISTANCE);
+        return HAL::eprGetInt16(EPR_Z_PROBE_BED_DISTANCE_STEPS) / HAL::eprGetFloat(EPR_ZAXIS_STEPS_PER_MM);
 #else
         return Z_PROBE_BED_DISTANCE;
 #endif
@@ -348,14 +355,7 @@ static inline void setZProbeHeight(float mm) {
         return DELTA_SEGMENTS_PER_SECOND_MOVE;
 #endif
     }
-    static inline float deltaDiagonalRodLength() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_DELTA_DIAGONAL_ROD_LENGTH);
-#else
-        return DELTA_DIAGONAL_ROD;
-#endif
-    }
-    static inline int16_t deltaSegmentsPerSecondPrint() {
+   static inline int16_t deltaSegmentsPerSecondPrint() {
 #if EEPROM_MODE != 0
         return HAL::eprGetInt16(EPR_DELTA_SEGMENTS_PER_SECOND_PRINT);
 #else
@@ -364,13 +364,6 @@ static inline void setZProbeHeight(float mm) {
     }
 #endif
 #if DRIVE_SYSTEM == DELTA
-    static inline float deltaHorizontalRadius() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_DELTA_HORIZONTAL_RADIUS);
-#else
-        return ROD_RADIUS;
-#endif
-    }
     static inline int16_t deltaTowerXOffsetSteps() {
 #if EEPROM_MODE != 0
         return HAL::eprGetInt16(EPR_DELTA_TOWERX_OFFSET_STEPS);
@@ -393,21 +386,21 @@ static inline void setZProbeHeight(float mm) {
 #endif
     }
 
-    static inline void setRodRadius(float mm) {
+    static inline void adjustRodRadius(float factor) {
 #if DRIVE_SYSTEM == DELTA
-      Printer::radius0=mm;
-      Printer::updateDerivedParameter();
+      Printer::deltaAPosXSteps = floor(0.5+Printer::deltaAPosXSteps*factor);
+      Printer::deltaAPosYSteps = floor(0.5+Printer::deltaAPosYSteps*factor);
+      Printer::deltaBPosXSteps = floor(0.5+Printer::deltaBPosXSteps*factor);
+      Printer::deltaBPosYSteps = floor(0.5+Printer::deltaBPosYSteps*factor);
+      Printer::deltaCPosXSteps = floor(0.5+Printer::deltaCPosXSteps*factor);
+      Printer::deltaCPosYSteps = floor(0.5+Printer::deltaCPosYSteps*factor);
 #if EEPROM_MODE != 0
-      //This is an odd situation, the radius can only be changed if eeprom is on.
-      // The radius is not saved to printer variable now, it is all derived parameters of
-      // fetching the radius, which if EEProm is off returns the Configuration constant.
-      HAL::eprSetFloat(EPR_DELTA_HORIZONTAL_RADIUS, mm);
+      HAL::eprSetFloat(EPR_DELTA_TOWER_A_XPOS, EEPROM::deltaTowerA_xPos()*factor);
+      HAL::eprSetFloat(EPR_DELTA_TOWER_A_YPOS, EEPROM::deltaTowerA_yPos()*factor);
+      HAL::eprSetFloat(EPR_DELTA_TOWER_C_XPOS, EEPROM::deltaTowerC_xPos()*factor);
       EEPROM::updateChecksum();
 #endif
 #endif
-    }
-    static inline void incrementRodRadius(float mm) {
-          setRodRadius(mm + deltaHorizontalRadius());
     }
     static inline void setTowerXFloor(float newZ) {
 #if DRIVE_SYSTEM == DELTA
@@ -461,56 +454,41 @@ static inline void setTowerZFloor(float newZ) {
         EEPROM::updateChecksum();
 #endif
     }
-    static inline float deltaAlphaA() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_DELTA_ALPHA_A);
-#else
-        return DELTA_ALPHA_A;
-#endif
+    static inline float deltaTowerA_xPos() {
+      return EEPROM_FLOAT(DELTA_TOWER_A_XPOS);
     }
-    static inline float deltaAlphaB() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_DELTA_ALPHA_B);
-#else
-        return DELTA_ALPHA_B;
-#endif
+    static inline float deltaTowerA_yPos() {
+      return EEPROM_FLOAT(DELTA_TOWER_A_YPOS);
     }
-    static inline float deltaAlphaC() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_DELTA_ALPHA_C);
-#else
-        return DELTA_ALPHA_C;
-#endif
+    static inline float deltaTowerC_xPos() {
+      return EEPROM_FLOAT(DELTA_TOWER_C_XPOS);
     }
-    static inline float deltaRadiusCorrectionA() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_DELTA_RADIUS_CORR_A);
-#else
-        return DELTA_RADIUS_CORRECTION_A;
-#endif
+    static inline float deltaDiagonalRodA() {
+      return EEPROM_FLOAT(DELTA_DIAGONAL_A);
     }
-    static inline float deltaRadiusCorrectionB() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_DELTA_RADIUS_CORR_B);
-#else
-        return DELTA_RADIUS_CORRECTION_B;
-#endif
+    static inline float deltaDiagonalRodB() {
+      return EEPROM_FLOAT(DELTA_DIAGONAL_B);
     }
-    static inline float deltaRadiusCorrectionC() {
-#if EEPROM_MODE != 0
-        return HAL::eprGetFloat(EPR_DELTA_RADIUS_CORR_C);
-#else
-        return DELTA_RADIUS_CORRECTION_C;
-#endif
+    static inline float deltaDiagonalRodC() {
+      return EEPROM_FLOAT(DELTA_DIAGONAL_C);
     }
-    static inline float deltaDiagonalCorrectionA() {
-      return EEPROM_FLOAT(DELTA_DIAGONAL_CORRECTION_A);
+    static inline float deltaTowerA_xTilt() {
+      return EEPROM_FLOAT(DELTA_TOWER_A_XTILT);
     }
-    static inline float deltaDiagonalCorrectionB() {
-      return EEPROM_FLOAT(DELTA_DIAGONAL_CORRECTION_B);
+    static inline float deltaTowerA_yTilt() {
+      return EEPROM_FLOAT(DELTA_TOWER_A_YTILT);
     }
-    static inline float deltaDiagonalCorrectionC() {
-      return EEPROM_FLOAT(DELTA_DIAGONAL_CORRECTION_C);
+    static inline float deltaTowerB_xTilt() {
+      return EEPROM_FLOAT(DELTA_TOWER_B_XTILT);
+    }
+    static inline float deltaTowerB_yTilt() {
+      return EEPROM_FLOAT(DELTA_TOWER_B_YTILT);
+    }
+    static inline float deltaTowerC_xTilt() {
+      return EEPROM_FLOAT(DELTA_TOWER_C_XTILT);
+    }
+    static inline float deltaTowerC_yTilt() {
+      return EEPROM_FLOAT(DELTA_TOWER_C_YTILT);
     }
     static inline float deltaMaxRadius() {
       return EEPROM_FLOAT(DELTA_MAX_RADIUS);

@@ -399,7 +399,10 @@ bool runBedLeveling(int s) {
         if(zMax == ILLEGAL_Z_PROBE)
             return false;
         zall += zMax - ENDSTOP_Z_BACK_ON_HOME;
-        Printer::zLength = zall;
+        float const rod2 = EEPROM::deltaDiagonalRodLengthB()*EEPROM::deltaDiagonalRodLengthB();
+        float const x2 = EEPROM::deltaTowerA_xPos()*EEPROM::deltaTowerA_xPos();
+        float const y2 = EEPROM::deltaTowerA_yPos()*EEPROM::deltaTowerA_yPos();
+        Printer::zLength = zall + floor(0.5 + sqrt(rod2 - x2 - y2));
     }
 #endif
 #endif // BED_CORRECTION_METHOD == 1
@@ -466,7 +469,7 @@ float Printer::runZMaxProbe() {
     long startZ = realDeltaPositionSteps[Z_AXIS] = currentNonlinearPositionSteps[Z_AXIS]; // update real
 #endif
     Commands::waitUntilEndOfAllMoves();
-    long probeDepth = 2 * (Printer::zMaxSteps - Printer::zMinSteps);
+    long probeDepth = HOME_DISTANCE_STEPS;
     stepsRemainingAtZHit = -1;
     setZProbingActive(true);
     PrintLine::moveRelativeDistanceInSteps(0, 0, probeDepth, 0, homingFeedrate[Z_AXIS] / ENDSTOP_Z_RETEST_REDUCTION_FACTOR, true, true);
@@ -600,9 +603,6 @@ Then we return the measured and corrected z distance.
 \return ILLEGAL_Z_PROBE on errors or measured distance.
 */
 float Printer::runZProbe(bool first, bool last, uint8_t repeat, bool runStartScript, bool enforceStartHeight) {
-    float oldOffX = Printer::offsetX;
-    float oldOffY = Printer::offsetY;
-    float oldOffZ = Printer::offsetZ;
     if(first) {
         if(!startProbing(runStartScript, enforceStartHeight))
             return ILLEGAL_Z_PROBE;
@@ -614,10 +614,15 @@ float Printer::runZProbe(bool first, bool last, uint8_t repeat, bool runStartScr
 #else
 	int32_t sum = 0;
 #endif
-    int32_t probeDepth;
-    int32_t shortMove = static_cast<int32_t>((float)Z_PROBE_SWITCHING_DISTANCE * axisStepsPerMM[Z_AXIS]); // distance to go up for repeated moves
-    int32_t lastCorrection = currentPositionSteps[Z_AXIS]; // starting position
-#if NONLINEAR_SYSTEM
+    int32_t const shortMove = static_cast<int32_t>((float)Z_PROBE_SWITCHING_DISTANCE * axisStepsPerMM[Z_AXIS]); // distance to go up for repeated moves
+    int32_t const lastCorrection = currentPositionSteps[Z_AXIS]; // starting position
+#if DRIVE_SYSTEM == DELTA
+    // TODO: maybe tower positions should use median as well when Z_PROBE_USE_MEDIAN is set
+    int32_t sumA = 0, sumB = 0, sumC = 0;
+    realDeltaPositionSteps[A_TOWER] = currentNonlinearPositionSteps[A_TOWER]; // update real
+    realDeltaPositionSteps[B_TOWER] = currentNonlinearPositionSteps[B_TOWER]; // update real
+    realDeltaPositionSteps[C_TOWER] = currentNonlinearPositionSteps[C_TOWER]; // update real
+#elif NONLINEAR_SYSTEM
     realDeltaPositionSteps[Z_AXIS] = currentNonlinearPositionSteps[Z_AXIS]; // update real
 #endif
     //int32_t updateZ = 0;
@@ -636,29 +641,38 @@ float Printer::runZProbe(bool first, bool last, uint8_t repeat, bool runStartScr
 	HAL::delayMilliseconds(70);
 #endif
     for(int8_t r = 0; r < repeat; r++) {
-        probeDepth = 2 * (Printer::zMaxSteps - Printer::zMinSteps); // probe should always hit within this distance
         stepsRemainingAtZHit = -1; // Marker that we did not hit z probe
         setZProbingActive(true);
 #if defined(Z_PROBE_DELAY) && Z_PROBE_DELAY > 0
         HAL::delayMilliseconds(Z_PROBE_DELAY);
 #endif
-        PrintLine::moveRelativeDistanceInSteps(0, 0, -probeDepth, 0, EEPROM::zProbeSpeed(), true, true);
+#if DRIVE_SYSTEM == DELTA
+        int32_t startPositionStepsZ = currentPositionSteps[Z_AXIS];
+        int32_t startNonlinearPositionA = currentNonlinearPositionSteps[A_TOWER];
+#endif
+        PrintLine::moveRelativeDistanceInSteps(0, 0, -HOME_DISTANCE_STEPS, 0, EEPROM::zProbeSpeed(), true, true);
         setZProbingActive(false);
         if(stepsRemainingAtZHit < 0) {
             Com::printErrorFLN(Com::tZProbeFailed);
             return ILLEGAL_Z_PROBE;
         }
-#if NONLINEAR_SYSTEM
-        stepsRemainingAtZHit = realDeltaPositionSteps[C_TOWER] - currentNonlinearPositionSteps[C_TOWER]; // nonlinear moves may split z so stepsRemainingAtZHit is only what is left from last segment not total move. This corrects the problem.
-#endif
 #if DRIVE_SYSTEM == DELTA
-        currentNonlinearPositionSteps[A_TOWER] += stepsRemainingAtZHit; // Update difference
-        currentNonlinearPositionSteps[B_TOWER] += stepsRemainingAtZHit;
-        currentNonlinearPositionSteps[C_TOWER] += stepsRemainingAtZHit;
+        {
+            sumA += realDeltaPositionSteps[A_TOWER];
+            sumB += realDeltaPositionSteps[B_TOWER];
+            sumC += realDeltaPositionSteps[C_TOWER];
+            currentNonlinearPositionSteps[A_TOWER] = realDeltaPositionSteps[A_TOWER]; // Update difference
+            currentNonlinearPositionSteps[B_TOWER] = realDeltaPositionSteps[B_TOWER];
+            currentNonlinearPositionSteps[C_TOWER] = realDeltaPositionSteps[C_TOWER];
+            int32_t nonlinearPositionDifference = startNonlinearPositionA - currentNonlinearPositionSteps[A_TOWER];
+            // TODO: cartesian z position can start to drift slightly due to rounding if tower A is tilted enough
+            int32_t const cartesianDiffStepsZ = floor( 0.5 + nonlinearPositionDifference / (deltaATiltXY / float(0x10000)));
+            currentPositionSteps[Z_AXIS] = startPositionStepsZ - cartesianDiffStepsZ;
+        }
 #elif NONLINEAR_SYSTEM
-        currentNonlinearPositionSteps[Z_AXIS] += stepsRemainingAtZHit;
+        currentPositionSteps[Z_AXIS] += realDeltaPositionSteps[Z_AXIS] - currentNonlinearPositionSteps[Z_AXIS];
+        currentNonlinearPositionSteps[Z_AXIS] = realDeltaPositionSteps[Z_AXIS];
 #endif
-        currentPositionSteps[Z_AXIS] += stepsRemainingAtZHit; // now current position is correct
 #if defined(Z_PROBE_USE_MEDIAN) && Z_PROBE_USE_MEDIAN
         measurements[r] = lastCorrection - currentPositionSteps[Z_AXIS];
 #else
@@ -667,7 +681,8 @@ float Printer::runZProbe(bool first, bool last, uint8_t repeat, bool runStartScr
         //Com::printFLN(PSTR("ZHSteps:"),lastCorrection - currentPositionSteps[Z_AXIS]);
         if(r + 1 < repeat) {
             // go only shortest possible move up for repetitions
-            PrintLine::moveRelativeDistanceInSteps(0, 0, shortMove, 0, HOMING_FEEDRATE_Z, true, true);
+            PrintLine::moveRelativeDistanceInSteps(0, 0, shortMove, 0, 2*EEPROM::zProbeSpeed(), true, true);
+            for(uint8_t i = 0; i < 5; ++i ) { HAL::delayMilliseconds(1); Endstops::update(); }
             if(Endstops::zProbe()) {
                 Com::printErrorFLN(PSTR("z-probe did not untrigger on repetitive measurement - maybe you need to increase distance!"));
                 UI_MESSAGE(1);
@@ -684,6 +699,7 @@ float Printer::runZProbe(bool first, bool last, uint8_t repeat, bool runStartScr
 
     // Go back to start position
     PrintLine::moveRelativeDistanceInSteps(0, 0, lastCorrection - currentPositionSteps[Z_AXIS], 0, HOMING_FEEDRATE_Z, true, true);
+    for(uint8_t i = 0; i < 5; ++i ) { HAL::delayMilliseconds(1); Endstops::update(); }
     if(Endstops::zProbe()) { // did we untrigger? If not don't trust result!
         Com::printErrorFLN(PSTR("z-probe did not untrigger on repetitive measurement - maybe you need to increase distance!"));
         UI_MESSAGE(1);
@@ -746,6 +762,12 @@ float Printer::runZProbe(bool first, bool last, uint8_t repeat, bool runStartScr
     }
 #else
     Com::printFLN(Com::tSpaceYColon, realYPosition());
+#endif
+#if DRIVE_SYSTEM == DELTA
+    // NOTE: The tower positions are reported at the moment zProbe triggered.
+    Com::printF(Com::tMeasureDeltaSteps, (sumA+(repeat>>1))/repeat);
+    Com::printF(Com::tComma, (sumB+(repeat>>1))/repeat);
+    Com::printFLN(Com::tComma, (sumC+(repeat>>1))/repeat);
 #endif
     if(Endstops::zProbe()) {
         Com::printErrorFLN(PSTR("z-probe did not untrigger after going back to start position."));

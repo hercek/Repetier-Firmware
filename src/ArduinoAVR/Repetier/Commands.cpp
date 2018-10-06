@@ -1346,8 +1346,11 @@ void Commands::processGCode(GCode *com) {
                 Com::printErrorFLN(PSTR("Cannot set radius and floor at same time."));
             else if (com->R != 0) {
                 //add r to radius
-                if (abs(com->R) <= 10) EEPROM::incrementRodRadius(com->R);
-                else Com::printErrorFLN(PSTR("Calibration movement is limited to 10mm."));
+                if (abs(com->R) <= 10){
+                    float const rSteps = com->R*Printer::axisStepsPerMM[Z_AXIS];
+                    float const factor = (rSteps + Printer::deltaCPosYSteps) / Printer::deltaCPosYSteps;
+                    EEPROM::adjustRodRadius(factor);
+                }else Com::printErrorFLN(PSTR("Calibration movement is limited to 10mm."));
             } else {
                 // auto set radius. Head must be at 0,0 and touching
                 // Z offset will be corrected for.
@@ -1365,7 +1368,8 @@ void Commands::processGCode(GCode *com) {
                         // Reverse that to get calculated Rod Radius given B height
                         h -= RMath::sqr((float)bSteps);
                         h = sqrt(h);
-                        EEPROM::setRodRadius(h * Printer::invAxisStepsPerMM[Z_AXIS]);
+                        float const factor = h / Printer::deltaCPosYSteps;
+                        EEPROM::adjustRodRadius(factor);
                     } else {
                         // calculate radius assuming we are at surface
                         // If Z is greater than 0 it will get calculated out for correct radius
@@ -1378,7 +1382,8 @@ void Commands::processGCode(GCode *com) {
                         // Reverse that to get calculated Rod Radius given B height
                         h -= RMath::sqr(bSteps);
                         h = SQRT(h);
-                        EEPROM::setRodRadius(h * Printer::invAxisStepsPerMM[Z_AXIS]);
+                        float const factor = float(h) / Printer::deltaCPosYSteps;
+                        EEPROM::adjustRodRadius(factor);
                     }
                 } else
                     Com::printErrorFLN(PSTR("First move to touch at x,y=0,0 to auto-set radius."));

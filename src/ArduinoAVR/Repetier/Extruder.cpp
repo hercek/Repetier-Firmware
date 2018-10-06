@@ -748,7 +748,6 @@ void Extruder::selectExtruderById(uint8_t extruderId) {
         Printer::updateCurrentPosition(true);
     }
 
-
     Extruder::current = next;
     // --------------------- Now new extruder is active --------------------
 #if DUAL_X_RESOLUTION
@@ -789,6 +788,7 @@ void Extruder::selectExtruderById(uint8_t extruderId) {
         Printer::updateCurrentPosition(true); // does not update x in lazy mode!
         GCode::executeFString(next->selectCommands);
     }
+
 #if LAZY_DUAL_X_AXIS == 0
     if (executeSelect) {
         Printer::currentPositionSteps[X_AXIS] = Extruder::current->xOffset - dualXPosSteps;
@@ -842,7 +842,6 @@ void Extruder::selectExtruderById(uint8_t extruderId) {
 		Printer::lastCmdPos[Z_AXIS] = lastZ;
 	}
 #endif
-
 	if(Printer::isHomedAll()) {
 		Printer::moveToReal(cx, cy, cz, IGNORE_COORDINATE, EXTRUDER_SWITCH_XY_SPEED);
 	}

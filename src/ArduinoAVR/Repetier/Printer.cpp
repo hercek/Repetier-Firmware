@@ -103,7 +103,6 @@ floatLong Printer::deltaDiagonalStepsSquaredA;
 floatLong Printer::deltaDiagonalStepsSquaredB;
 floatLong Printer::deltaDiagonalStepsSquaredC;
 float Printer::deltaMaxRadiusSquared;
-float Printer::radius0;
 int32_t Printer::deltaFloorSafetyMarginSteps = 0;
 int32_t Printer::deltaAPosXSteps;
 int32_t Printer::deltaAPosYSteps;
@@ -111,6 +110,15 @@ int32_t Printer::deltaBPosXSteps;
 int32_t Printer::deltaBPosYSteps;
 int32_t Printer::deltaCPosXSteps;
 int32_t Printer::deltaCPosYSteps;
+int32_t Printer::deltaATiltX;
+int32_t Printer::deltaATiltY;
+int32_t Printer::deltaATiltXY;
+int32_t Printer::deltaBTiltX;
+int32_t Printer::deltaBTiltY;
+int32_t Printer::deltaBTiltXY;
+int32_t Printer::deltaCTiltX;
+int32_t Printer::deltaCTiltY;
+int32_t Printer::deltaCTiltXY;
 int32_t Printer::realDeltaPositionSteps[TOWER_ARRAY];
 int16_t Printer::travelMovesPerSecond;
 int16_t Printer::printMovesPerSecond;
@@ -403,20 +411,26 @@ void Printer::updateDerivedParameter() {
     towerAMinSteps = axisStepsPerMM[A_TOWER] * xMin;
     towerBMinSteps = axisStepsPerMM[B_TOWER] * yMin;
     towerCMinSteps = axisStepsPerMM[C_TOWER] * zMin;
-    //radius0 = EEPROM::deltaHorizontalRadius();
-    float radiusA = radius0 + EEPROM::deltaRadiusCorrectionA();
-    float radiusB = radius0 + EEPROM::deltaRadiusCorrectionB();
-    float radiusC = radius0 + EEPROM::deltaRadiusCorrectionC();
-    deltaAPosXSteps = floor(radiusA * cos(EEPROM::deltaAlphaA() * M_PI / 180.0f) * axisStepsPerMM[Z_AXIS] + 0.5f);
-    deltaAPosYSteps = floor(radiusA * sin(EEPROM::deltaAlphaA() * M_PI / 180.0f) * axisStepsPerMM[Z_AXIS] + 0.5f);
-    deltaBPosXSteps = floor(radiusB * cos(EEPROM::deltaAlphaB() * M_PI / 180.0f) * axisStepsPerMM[Z_AXIS] + 0.5f);
-    deltaBPosYSteps = floor(radiusB * sin(EEPROM::deltaAlphaB() * M_PI / 180.0f) * axisStepsPerMM[Z_AXIS] + 0.5f);
-    deltaCPosXSteps = floor(radiusC * cos(EEPROM::deltaAlphaC() * M_PI / 180.0f) * axisStepsPerMM[Z_AXIS] + 0.5f);
-    deltaCPosYSteps = floor(radiusC * sin(EEPROM::deltaAlphaC() * M_PI / 180.0f) * axisStepsPerMM[Z_AXIS] + 0.5f);
-    deltaDiagonalStepsSquaredA.l = static_cast<uint32_t>((EEPROM::deltaDiagonalCorrectionA() + EEPROM::deltaDiagonalRodLength()) * axisStepsPerMM[Z_AXIS]);
-    deltaDiagonalStepsSquaredB.l = static_cast<uint32_t>((EEPROM::deltaDiagonalCorrectionB() + EEPROM::deltaDiagonalRodLength()) * axisStepsPerMM[Z_AXIS]);
-    deltaDiagonalStepsSquaredC.l = static_cast<uint32_t>((EEPROM::deltaDiagonalCorrectionC() + EEPROM::deltaDiagonalRodLength()) * axisStepsPerMM[Z_AXIS]);
-    if(deltaDiagonalStepsSquaredA.l > 65534 || 2 * radius0 * axisStepsPerMM[Z_AXIS] > 65534) {
+    deltaAPosXSteps = floor(EEPROM::deltaTowerA_xPos() * axisStepsPerMM[Z_AXIS] + 0.5f);
+    deltaAPosYSteps = floor(EEPROM::deltaTowerA_yPos() * axisStepsPerMM[Z_AXIS] + 0.5f);
+    deltaBPosXSteps = -deltaAPosXSteps;
+    deltaBPosYSteps = deltaAPosYSteps;
+    deltaCPosXSteps = floor(EEPROM::deltaTowerC_xPos() * axisStepsPerMM[Z_AXIS] + 0.5f);
+    deltaCPosYSteps = floor(-2*EEPROM::deltaTowerA_yPos() * axisStepsPerMM[Z_AXIS] + 0.5f);
+    deltaDiagonalStepsSquaredA.l = static_cast<uint32_t>(EEPROM::deltaDiagonalRodA() * axisStepsPerMM[Z_AXIS]);
+    deltaDiagonalStepsSquaredB.l = static_cast<uint32_t>(EEPROM::deltaDiagonalRodB() * axisStepsPerMM[Z_AXIS]);
+    deltaDiagonalStepsSquaredC.l = static_cast<uint32_t>(EEPROM::deltaDiagonalRodC() * axisStepsPerMM[Z_AXIS]);
+    float const sf = 0x10000; // float to int scale factor
+    deltaATiltX = floor(EEPROM::deltaTowerA_xTilt() * sf + 0.5);
+    deltaATiltY = floor(EEPROM::deltaTowerA_yTilt() * sf + 0.5);
+    deltaATiltXY = floor(sf / sqrt(1-RMath::sqr(EEPROM::deltaTowerA_xTilt())-RMath::sqr(EEPROM::deltaTowerA_yTilt())) + 0.5);
+    deltaBTiltX = floor(EEPROM::deltaTowerB_xTilt() * sf + 0.5);
+    deltaBTiltY = floor(EEPROM::deltaTowerB_yTilt() * sf + 0.5);
+    deltaBTiltXY = floor(sf / sqrt(1-RMath::sqr(EEPROM::deltaTowerB_xTilt())-RMath::sqr(EEPROM::deltaTowerB_yTilt())) + 0.5);
+    deltaCTiltX = floor(EEPROM::deltaTowerC_xTilt() * sf + 0.5);
+    deltaCTiltY = floor(EEPROM::deltaTowerC_yTilt() * sf + 0.5);
+    deltaCTiltXY = floor(sf / sqrt(1-RMath::sqr(EEPROM::deltaTowerC_xTilt())-RMath::sqr(EEPROM::deltaTowerC_yTilt())) + 0.5);
+    if(deltaDiagonalStepsSquaredA.l > 65534 || 2 * deltaCPosYSteps > 65534) {
         setLargeMachine(true);
 #ifdef SUPPORT_64_BIT_MATH
         deltaDiagonalStepsSquaredA.L = RMath::sqr(static_cast<uint64_t>(deltaDiagonalStepsSquaredA.l));
@@ -435,21 +449,20 @@ void Printer::updateDerivedParameter() {
     }
     deltaMaxRadiusSquared = RMath::sqr(EEPROM::deltaMaxRadius());
     long cart[Z_AXIS_ARRAY], delta[TOWER_ARRAY];
-    cart[X_AXIS] = cart[Y_AXIS] = 0;
-    cart[Z_AXIS] = zMaxSteps;
+    cart[X_AXIS] = cart[Y_AXIS] = cart[Z_AXIS] = 0;
     transformCartesianStepsToDeltaSteps(cart, delta);
-    maxDeltaPositionSteps = delta[0];
+    maxDeltaPositionSteps = zMaxSteps;
     xMaxSteps = yMaxSteps = zMaxSteps;
     xMinSteps = yMinSteps = zMinSteps = 0;
     deltaFloorSafetyMarginSteps = DELTA_FLOOR_SAFETY_MARGIN_MM * axisStepsPerMM[Z_AXIS];
 #elif DRIVE_SYSTEM == TUGA
-    deltaDiagonalStepsSquared.l = uint32_t(EEPROM::deltaDiagonalRodLength() * axisStepsPerMM[X_AXIS]);
+    deltaDiagonalStepsSquared.l = uint32_t(EEPROM::deltaDiagonalRodLengthB() * axisStepsPerMM[X_AXIS]);
     if(deltaDiagonalStepsSquared.l > 65534) {
         setLargeMachine(true);
         deltaDiagonalStepsSquared.f = float(deltaDiagonalStepsSquared.l) * float(deltaDiagonalStepsSquared.l);
     } else
         deltaDiagonalStepsSquared.l = deltaDiagonalStepsSquared.l * deltaDiagonalStepsSquared.l;
-    deltaBPosXSteps = static_cast<int32_t>(EEPROM::deltaDiagonalRodLength() * axisStepsPerMM[X_AXIS]);
+    deltaBPosXSteps = static_cast<int32_t>(EEPROM::deltaDiagonalRodLengthB() * axisStepsPerMM[X_AXIS]);
     xMaxSteps = static_cast<int32_t>(axisStepsPerMM[X_AXIS] * (xMin + xLength));
     yMaxSteps = static_cast<int32_t>(axisStepsPerMM[Y_AXIS] * yLength);
     zMaxSteps = static_cast<int32_t>(axisStepsPerMM[Z_AXIS] * (zMin + zLength));
@@ -1205,9 +1218,6 @@ void Printer::setup() {
     xMin = X_MIN_POS;
     yMin = Y_MIN_POS;
     zMin = Z_MIN_POS;
-#if DRIVE_SYSTEM == DELTA
-    radius0 = ROD_RADIUS;
-#endif
 #if ENABLE_BACKLASH_COMPENSATION
     backlashX = X_BACKLASH;
     backlashY = Y_BACKLASH;
@@ -1334,6 +1344,37 @@ void Printer::GoToMemoryPosition(bool x, bool y, bool z, bool e, float feed) {
 }
 
 #if DRIVE_SYSTEM == DELTA
+void sort(int cnt, long vals[]) {
+  long tmp;
+  do{
+    int next_cnt = 0;
+    for(int i = 1; i < cnt; ++i)
+      if (vals[i-1] > vals[i]) {
+        tmp = vals[i-1]; vals[i-1] = vals[i]; vals[i] = tmp;
+        next_cnt = i;
+      }
+    cnt = next_cnt;
+  }while( cnt > 1 );
+}
+long getAvg(FSTRINGPARAM(avgName), int cnt, long vals[]) {
+  sort(cnt, vals);
+  long rv = 0;
+  if (cnt < 4) {
+    for(uint8_t r = 0; r < cnt; ++r)
+      rv += vals[r];
+    rv = (rv + cnt/2) / cnt;
+  }else{
+    for(uint8_t r = 1; r < cnt-1; ++r)
+      rv += vals[r];
+    rv = (rv + (cnt-2)/2) / (cnt-2);
+  }
+  Com::printF(avgName, vals[0]-rv);
+  for(uint8_t r = 1; r < cnt; ++r )
+    Com::printF(Com::tComma, vals[r]-rv);
+  Com::println();
+  return rv;
+}
+
 void Printer::deltaMoveToTopEndstops(float feedrate) {
     for (fast8_t i = 0; i < 3; i++)
         Printer::currentPositionSteps[i] = 0;
@@ -1342,7 +1383,7 @@ void Printer::deltaMoveToTopEndstops(float feedrate) {
     Printer::stepsRemainingAtZHit = -1;
     setHoming(true);
     transformCartesianStepsToDeltaSteps(currentPositionSteps, currentNonlinearPositionSteps);
-    PrintLine::moveRelativeDistanceInSteps(0, 0, (zMaxSteps + EEPROM::deltaDiagonalRodLength()*axisStepsPerMM[Z_AXIS]) * 1.5, 0, feedrate, true, true);
+    PrintLine::moveRelativeDistanceInSteps(0, 0, HOME_DISTANCE_STEPS, 0, feedrate, true, true);
     offsetX = offsetY = offsetZ = offsetZ2 = 0;
     setHoming(false);
 }
@@ -1359,7 +1400,11 @@ void Printer::homeYAxis() {
     }
 }
 void Printer::homeZAxis() { // Delta z homing
-    bool homingSuccess = false;
+    uint8_t const REPEAT = 5;
+    long xTowerOffsets[REPEAT];
+    long yTowerOffsets[REPEAT];
+    long zTowerOffsets[REPEAT];
+    setIgnoreTowerTilt(true);
     Endstops::resetAccumulator();
     deltaMoveToTopEndstops(Printer::homingFeedrate[Z_AXIS]);
     // New safe homing routine by Kyrre Aalerud
@@ -1368,81 +1413,72 @@ void Printer::homeZAxis() { // Delta z homing
     //Endstops::report();
     // Check that all endstops (XYZ) were hit
     Endstops::fillFromAccumulator();
-    if (Endstops::xMax() && Endstops::yMax() && Endstops::zMax()) {
-        // Back off for retest
-        PrintLine::moveRelativeDistanceInSteps(0, 0, axisStepsPerMM[Z_AXIS] * -ENDSTOP_Z_BACK_MOVE, 0, Printer::homingFeedrate[Z_AXIS] / ENDSTOP_X_RETEST_REDUCTION_FACTOR, true, true);
-        //Endstops::report();
-        // Check for proper release of all (XYZ) endstops
-        if (!(Endstops::xMax() || Endstops::yMax() || Endstops::zMax())) {
-            // Rehome with reduced speed
-            Endstops::resetAccumulator();
-            deltaMoveToTopEndstops(Printer::homingFeedrate[Z_AXIS] / ENDSTOP_Z_RETEST_REDUCTION_FACTOR);
-            Endstops::fillFromAccumulator();
-            //Endstops::report();
-            // Check that all endstops (XYZ) were hit again
-            if (Endstops::xMax() && Endstops::yMax() && Endstops::zMax()) {
-                homingSuccess = true; // Assume success in case there is no back move
+    float const reducedHomingFeedrate = homingFeedrate[Z_AXIS]/ENDSTOP_X_RETEST_REDUCTION_FACTOR;
+    if (!Endstops::xMax() || !Endstops::yMax() || !Endstops::zMax()) goto getOutFailing;
+    // Back off for retest
 #if defined(ENDSTOP_Z_BACK_ON_HOME)
-                if(ENDSTOP_Z_BACK_ON_HOME > 0) {
-                    PrintLine::moveRelativeDistanceInSteps(0, 0, axisStepsPerMM[Z_AXIS] * -ENDSTOP_Z_BACK_ON_HOME, 0, homingFeedrate[Z_AXIS], true, true);
-                    //Endstops::report();
-                    // Check for missing release of any (XYZ) endstop
-                    if (Endstops::xMax() || Endstops::yMax() || Endstops::zMax()) {
-                        homingSuccess = false; // Reset success flag
-                    }
-                }
+    PrintLine::moveRelativeDistanceInSteps(0,0,-axisStepsPerMM[Z_AXIS]*(1+ENDSTOP_Z_BACK_ON_HOME),0,reducedHomingFeedrate,true,false);
+#else
+    PrintLine::moveRelativeDistanceInSteps(0,0,-axisStepsPerMM[Z_AXIS],0,reducedHomingFeedrate,true,false);
 #endif
-            }
+    //Endstops::report();
+    for (fast8_t i = 0; i < 3; i++) {
+        currentPositionSteps[i] = 0; realDeltaPositionSteps[i] = 0; }
+    // Cool, now carriages are at the precise location from which we are going to measure
+    // endstop distances. And the location position is set to home position for now (even when
+    // it is about ENDSTOP_Z_BACK_MOVE lower).
+    for( uint8_t i = 0; i < REPEAT; ++i ) {
+        // Check for proper release of all (XYZ) endstops
+        for(uint8_t r = 0; r < 5; ++r ) { HAL::delayMilliseconds(1); Endstops::update(); }
+        if (Endstops::xMax() || Endstops::yMax() || Endstops::zMax()) goto getOutFailing;
+        // Rehome with reduced speed
+        Endstops::resetAccumulator();
+        deltaMoveToTopEndstops(reducedHomingFeedrate);
+        Endstops::fillFromAccumulator();
+        if (!Endstops::xMax() || !Endstops::yMax() || !Endstops::zMax()) goto getOutFailing;
+        // grab endstop offsets
+        xTowerOffsets[i] = realDeltaPositionSteps[0];
+        yTowerOffsets[i] = realDeltaPositionSteps[1];
+        zTowerOffsets[i] = realDeltaPositionSteps[2];
+        if (i < REPEAT-1) {
+            // Return back to the position from which we started the movement to the endstops
+            uint16_t nonLinearDelta[3] = {uint16_t(realDeltaPositionSteps[0]), uint16_t(realDeltaPositionSteps[1]), uint16_t(realDeltaPositionSteps[2])};
+            PrintLine::doNonlinearDownMove(nonLinearDelta, Printer::homingFeedrate[Z_AXIS]);
         }
+        //Endstops::report();
+    }//for
+    {// return to the proper home position
+        uint16_t nonLinearDelta[3] = {
+            uint16_t(getAvg(Com::tTower1,REPEAT,xTowerOffsets) + EEPROM::deltaTowerXOffsetSteps()),
+            uint16_t(getAvg(Com::tTower2,REPEAT,yTowerOffsets) + EEPROM::deltaTowerYOffsetSteps()),
+            uint16_t(getAvg(Com::tTower3,REPEAT,zTowerOffsets) + EEPROM::deltaTowerZOffsetSteps())};
+        PrintLine::doNonlinearDownMove(nonLinearDelta, Printer::homingFeedrate[Z_AXIS]);
     }
-    // Check if homing failed.  If so, request pause!
-    if (!homingSuccess) {
+    // initialize position tracking
+    for(uint8_t r = 0; r < 5; ++r ) { HAL::delayMilliseconds(1); Endstops::update(); }
+    if (Endstops::xMax() || Endstops::yMax() || Endstops::zMax()) {
+getOutFailing:
         setXHomed(false);
         setYHomed(false);
         setZHomed(false);
         GCodeSource::printAllFLN(PSTR("RequestPause:Homing failed!"));
+        return;
     } else {
         setXHomed(true);
         setYHomed(true);
         setZHomed(true);
     }
-    // Correct different end stop heights
-    // These can be adjusted by two methods. You can use offsets stored by determining the center
-    // or you can use the xyzMinSteps from G100 calibration. Both have the same effect but only one
-    // should be measured as both have the same effect.
-    long dx = -xMinSteps - EEPROM::deltaTowerXOffsetSteps();
-    long dy = -yMinSteps - EEPROM::deltaTowerYOffsetSteps();
-    long dz = -zMinSteps - EEPROM::deltaTowerZOffsetSteps();
-    long dm = RMath::min(dx, dy, dz);
-    //Com::printFLN(Com::tTower1,dx);
-    //Com::printFLN(Com::tTower2,dy);
-    //Com::printFLN(Com::tTower3,dz);
-    dx -= dm; // now all dxyz are positive
-    dy -= dm;
-    dz -= dm;
-    currentPositionSteps[X_AXIS] = 0; // here we should be
-    currentPositionSteps[Y_AXIS] = 0;
-    currentPositionSteps[Z_AXIS] = zMaxSteps;
-    transformCartesianStepsToDeltaSteps(currentPositionSteps, currentNonlinearPositionSteps);
-    currentNonlinearPositionSteps[A_TOWER] -= dx;
-    currentNonlinearPositionSteps[B_TOWER] -= dy;
-    currentNonlinearPositionSteps[C_TOWER] -= dz;
-    PrintLine::moveRelativeDistanceInSteps(0, 0, dm, 0, homingFeedrate[Z_AXIS], true, false);
-    currentPositionSteps[X_AXIS] = 0; // now we are really here
-    currentPositionSteps[Y_AXIS] = 0;
-    currentPositionSteps[Z_AXIS] = zMaxSteps - zBedOffset * axisStepsPerMM[Z_AXIS]; // Extruder is now exactly in the delta center
+    // now we are really precisely positioned from endstops
+    // (we are homing each tower to zMaxSteps from bed)
+    setIgnoreTowerTilt(false);
+    maxDeltaPositionSteps = zMaxSteps - zBedOffset * axisStepsPerMM[Z_AXIS]; // TODO: should take tower tilt into account
+    for (fast8_t i = 0; i < 3; i++)
+        realDeltaPositionSteps[i] = currentNonlinearPositionSteps[i] = maxDeltaPositionSteps;
+    initializeCartesianStepsAfterHoming(currentPositionSteps);
+    updateCurrentPosition(true);
     coordinateOffset[X_AXIS] = 0;
     coordinateOffset[Y_AXIS] = 0;
     coordinateOffset[Z_AXIS] = 0;
-    transformCartesianStepsToDeltaSteps(currentPositionSteps, currentNonlinearPositionSteps);
-    realDeltaPositionSteps[A_TOWER] = currentNonlinearPositionSteps[A_TOWER];
-    realDeltaPositionSteps[B_TOWER] = currentNonlinearPositionSteps[B_TOWER];
-    realDeltaPositionSteps[C_TOWER] = currentNonlinearPositionSteps[C_TOWER];
-    //maxDeltaPositionSteps = currentDeltaPositionSteps[X_AXIS];
-#if defined(ENDSTOP_Z_BACK_ON_HOME)
-    if(ENDSTOP_Z_BACK_ON_HOME > 0)
-        maxDeltaPositionSteps += axisStepsPerMM[Z_AXIS] * ENDSTOP_Z_BACK_ON_HOME;
-#endif
     Extruder::selectExtruderById(Extruder::current->id);
 #if FEATURE_BABYSTEPPING
     Printer::zBabysteps = 0;
@@ -1470,8 +1506,6 @@ void Printer::homeAxis(bool xaxis, bool yaxis, bool zaxis) { // Delta homing cod
     // Homing Z axis means that you must home X and Y
     EVENT_BEFORE_Z_HOME;
     homeZAxis();
-    moveToReal(0, 0, Printer::zLength - zBedOffset, IGNORE_COORDINATE, homingFeedrate[Z_AXIS]); // Move to designed coordinates including translation
-    updateCurrentPosition(true);
     updateHomedAll();
     UI_CLEAR_STATUS
     Commands::printCurrentPosition();
@@ -1479,7 +1513,6 @@ void Printer::homeAxis(bool xaxis, bool yaxis, bool zaxis) { // Delta homing cod
 #if defined(SUPPORT_LASER) && SUPPORT_LASER
     LaserDriver::laserOn = oldLaser;
 #endif
-    Printer::updateCurrentPosition();
     setNoDestinationCheck(nocheck);
 }
 #else
@@ -2209,7 +2242,7 @@ void Printer::showConfiguration() {
 #if DRIVE_SYSTEM == DELTA
     Com::config(PSTR("XHomePos:"), 0, 2);
     Com::config(PSTR("YHomePos:"), 0, 2);
-    Com::config(PSTR("ZHomePos:"), zMin + zLength, 3);
+    Com::config(PSTR("TowerTopPos:"), zMin + zLength, 3);
 #else
     Com::config(PSTR("XHomePos:"), xMin + (X_HOME_DIR > 0 ? xLength : 0), 2);
     Com::config(PSTR("YHomePos:"), yMin + (Y_HOME_DIR > 0 ? yLength : 0), 2);
@@ -2241,10 +2274,18 @@ void Printer::showConfiguration() {
     Com::config(PSTR("ZMin:"), zMin);
     Com::config(PSTR("XMax:"), xMin + xLength);
     Com::config(PSTR("YMax:"), yMin + yLength);
+#if DRIVE_SYSTEM != DELTA
     Com::config(PSTR("ZMax:"), zMin + zLength);
+#else
+    Com::config(PSTR("TowerTop:"), zMin + zLength);
+#endif
     Com::config(PSTR("XSize:"), xLength);
     Com::config(PSTR("YSize:"), yLength);
+#if DRIVE_SYSTEM != DELTA
     Com::config(PSTR("ZSize:"), zLength);
+#else
+    Com::config(PSTR("TowerLen:"), zLength);
+#endif
     Com::config(PSTR("XPrintAccel:"), maxAccelerationMMPerSquareSecond[X_AXIS]);
     Com::config(PSTR("YPrintAccel:"), maxAccelerationMMPerSquareSecond[Y_AXIS]);
     Com::config(PSTR("ZPrintAccel:"), maxAccelerationMMPerSquareSecond[Z_AXIS]);
