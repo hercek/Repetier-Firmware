@@ -336,6 +336,12 @@ FSTRINGVAR(tAxisCompTanXY)
 FSTRINGVAR(tAxisCompTanYZ)
 FSTRINGVAR(tAxisCompTanXZ)
 #endif
+#if FEATURE_HORIZSCALING
+FSTRINGVAR(tHorizScalingXX)
+FSTRINGVAR(tHorizScalingYX)
+FSTRINGVAR(tHorizScalingXY)
+FSTRINGVAR(tHorizScalingYY)
+#endif
 FSTRINGVAR(tConfigStoredEEPROM)
 FSTRINGVAR(tConfigLoadedEEPROM)
 FSTRINGVAR(tEPRConfigResetDefaults)

@@ -20,7 +20,7 @@
 #define _EEPROM_H
 
 // Id to distinguish version changes
-#define EEPROM_PROTOCOL_VERSION 20
+#define EEPROM_PROTOCOL_VERSION 21
 
 /** Where to start with our data block in memory. Can be moved if you
 have problems with other modules using the eeprom */
@@ -140,6 +140,11 @@ have problems with other modules using the eeprom */
 #define EPR_PARK_Y                            1060
 #define EPR_PARK_Z                            1064
 
+// Horizontal Scaling
+#define EPR_HORIZSCALING_XX			1068
+#define EPR_HORIZSCALING_YX			1072
+#define EPR_HORIZSCALING_XY			1076
+#define EPR_HORIZSCALING_YY			1080
 
 
 #if EEPROM_MODE != 0
@@ -344,6 +349,35 @@ static inline void setZProbeHeight(float mm) {
         return HAL::eprGetFloat(EPR_AXISCOMP_TANXZ);
 #else
         return AXISCOMP_TANXZ;
+#endif
+    }
+
+    static inline float horizScalingXX() {
+#if EEPROM_MODE != 0
+        return HAL::eprGetFloat(EPR_HORIZSCALING_XX);
+#else
+        return HORIZSCALING_XX;
+#endif
+    }
+    static inline float horizScalingYX() {
+#if EEPROM_MODE != 0
+        return HAL::eprGetFloat(EPR_HORIZSCALING_YX);
+#else
+        return HORIZSCALING_YX;
+#endif
+    }
+    static inline float horizScalingXY() {
+#if EEPROM_MODE != 0
+        return HAL::eprGetFloat(EPR_HORIZSCALING_XY);
+#else
+        return HORIZSCALING_XY;
+#endif
+    }
+    static inline float horizScalingYY() {
+#if EEPROM_MODE != 0
+        return HAL::eprGetFloat(EPR_HORIZSCALING_YY);
+#else
+        return HORIZSCALING_YY;
 #endif
     }
 

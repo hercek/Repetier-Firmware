@@ -1732,6 +1732,14 @@ Always hard to say since the other angle is 89° in this case!
 #define AXISCOMP_TANYZ 0
 #define AXISCOMP_TANXZ 0
 
+/* This allows to resize the part in the XY plane independently in two directions.
+If your printer prints circles as elipses then you can fix it using this feature.
+*/
+#define FEATURE_HORIZSCALING 0
+#define HORIZSCALING_XX 1
+#define HORIZSCALING_YX 0
+#define HORIZSCALING_XY 0
+#define HORIZSCALING_YY 1
 
 
 /** \brief Experimental calibration utility for delta printers

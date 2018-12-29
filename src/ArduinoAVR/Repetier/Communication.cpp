@@ -298,6 +298,12 @@ FSTRINGVALUE(Com::tAxisCompTanXY, "tanXY Axis Compensation")
 FSTRINGVALUE(Com::tAxisCompTanYZ, "tanYZ Axis Compensation")
 FSTRINGVALUE(Com::tAxisCompTanXZ, "tanXZ Axis Compensation")
 #endif
+#if FEATURE_HORIZSCALING
+FSTRINGVALUE(Com::tHorizScalingXX, "xx Horizontal Scaling");
+FSTRINGVALUE(Com::tHorizScalingYX, "yx Horizontal Scaling");
+FSTRINGVALUE(Com::tHorizScalingXY, "xy Horizontal Scaling");
+FSTRINGVALUE(Com::tHorizScalingYY, "yy Horizontal Scaling");
+#endif
 
 #if FEATURE_AUTOLEVEL
 FSTRINGVALUE(Com::tAutolevelActive, "Autolevel active (1/0)")

@@ -857,6 +857,10 @@ void Printer::waitForZProbeStart() {
  we need to be at to get the desired result, the real coordinates.
 */
 void Printer::transformToPrinter(float x, float y, float z, float &transX, float &transY, float &transZ) {
+#if FEATURE_HORIZSCALING
+    x = x * EEPROM::horizScalingXX() + y * EEPROM::horizScalingYX();
+    y = x * EEPROM::horizScalingXY() + y * EEPROM::horizScalingYY();
+#endif
 #if FEATURE_AXISCOMP
     // Axis compensation:
     x = x + y * EEPROM::axisCompTanXY() + z * EEPROM::axisCompTanXZ();
@@ -900,6 +904,15 @@ void Printer::transformFromPrinter(float x, float y, float z, float &transX, flo
     // Axis compensation:
     transY = transY - transZ * EEPROM::axisCompTanYZ();
     transX = transX - transY * EEPROM::axisCompTanXY() - transZ * EEPROM::axisCompTanXZ();
+#endif
+#if FEATURE_HORIZSCALING
+    float const xx = EEPROM::horizScalingXX();
+    float const yx = EEPROM::horizScalingYX();
+    float const xy = EEPROM::horizScalingXY();
+    float const yy = EEPROM::horizScalingYY();
+    float const invDet = 1 / (xx*yy - xy*yx);
+    transX = invDet * (transX*yy  + transY*-yx);
+    transY = invDet * (transX*-xy + transY*xx);
 #endif
 }
 #if FEATURE_AUTOLEVEL

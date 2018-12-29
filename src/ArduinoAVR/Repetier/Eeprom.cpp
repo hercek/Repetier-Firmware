@@ -490,9 +490,10 @@ void EEPROM::initalizeUncached()
     HAL::eprSetFloat(EPR_DELTA_TOWER_C_YTILT,DELTA_TOWER_C_YTILT);
     HAL::eprSetFloat(EPR_DELTA_MAX_RADIUS,DELTA_MAX_RADIUS);
 #endif
-    HAL::eprSetFloat(EPR_AXISCOMP_TANXY,AXISCOMP_TANXY);
-    HAL::eprSetFloat(EPR_AXISCOMP_TANYZ,AXISCOMP_TANYZ);
-    HAL::eprSetFloat(EPR_AXISCOMP_TANXZ,AXISCOMP_TANXZ);
+    HAL::eprSetFloat(EPR_HORIZSCALING_XX,HORIZSCALING_XX);
+    HAL::eprSetFloat(EPR_HORIZSCALING_YX,HORIZSCALING_YX);
+    HAL::eprSetFloat(EPR_HORIZSCALING_XY,HORIZSCALING_XY);
+    HAL::eprSetFloat(EPR_HORIZSCALING_YY,HORIZSCALING_YY);
     HAL::eprSetByte(EPR_DISTORTION_CORRECTION_ENABLED,0);
 
     HAL::eprSetFloat(EPR_RETRACTION_LENGTH,RETRACTION_LENGTH);
@@ -770,7 +771,6 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
         #endif
                 }*/
 
-        storeDataIntoEEPROM(false); // Store new fields for changed version
         if(version < 20) {
             HAL::eprSetFloat(EPR_DELTA_TOWER_A_XPOS,DELTA_TOWER_A_XPOS);
             HAL::eprSetFloat(EPR_DELTA_TOWER_A_YPOS,DELTA_TOWER_A_YPOS);
@@ -785,6 +785,13 @@ void EEPROM::readDataFromEEPROM(bool includeExtruder)
             HAL::eprSetFloat(EPR_DELTA_TOWER_C_XTILT,DELTA_TOWER_C_XTILT);
             HAL::eprSetFloat(EPR_DELTA_TOWER_C_YTILT,DELTA_TOWER_C_YTILT);
         }
+        if(version < 21) {
+            HAL::eprSetFloat(EPR_HORIZSCALING_XX,HORIZSCALING_XX);
+            HAL::eprSetFloat(EPR_HORIZSCALING_YX,HORIZSCALING_YX);
+            HAL::eprSetFloat(EPR_HORIZSCALING_XY,HORIZSCALING_XY);
+            HAL::eprSetFloat(EPR_HORIZSCALING_YY,HORIZSCALING_YY);
+        }
+        storeDataIntoEEPROM(false); // Store new fields for changed version
     }
     Printer::zBedOffset = HAL::eprGetFloat(EPR_Z_PROBE_Z_OFFSET);
 #if UI_DISPLAY_TYPE != NO_DISPLAY
@@ -991,6 +998,12 @@ writeFloat(EPR_X2AXIS_STEPS_PER_MM, Com::tEPRX2StepsPerMM, 4);
     writeFloat(EPR_AXISCOMP_TANXZ, Com::tAxisCompTanXZ,6);
 #endif
 
+#if FEATURE_HORIZSCALING
+    writeFloat(EPR_HORIZSCALING_XX, Com::tHorizScalingXX, 6);
+    writeFloat(EPR_HORIZSCALING_YX, Com::tHorizScalingYX, 6);
+    writeFloat(EPR_HORIZSCALING_XY, Com::tHorizScalingXY, 6);
+    writeFloat(EPR_HORIZSCALING_YY, Com::tHorizScalingYY, 6);
+#endif
 
 #if HAVE_HEATED_BED
     writeInt(EPR_BED_PREHEAT_TEMP, Com::tEPRPreheatBedTemp);
