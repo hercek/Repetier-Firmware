@@ -944,12 +944,12 @@ writeFloat(EPR_X2AXIS_STEPS_PER_MM, Com::tEPRX2StepsPerMM, 4);
     writeFloat(EPR_DELTA_DIAGONAL_A, Com::tDeltaDiagonalA);
     writeFloat(EPR_DELTA_DIAGONAL_B, Com::tDeltaDiagonalB);
     writeFloat(EPR_DELTA_DIAGONAL_C, Com::tDeltaDiagonalC);
-    writeFloat(EPR_DELTA_TOWER_A_XTILT, Com::tDeltaTowerA_xTilt);
-    writeFloat(EPR_DELTA_TOWER_A_YTILT, Com::tDeltaTowerA_yTilt);
-    writeFloat(EPR_DELTA_TOWER_B_XTILT, Com::tDeltaTowerB_xTilt);
-    writeFloat(EPR_DELTA_TOWER_B_YTILT, Com::tDeltaTowerB_yTilt);
-    writeFloat(EPR_DELTA_TOWER_C_XTILT, Com::tDeltaTowerC_xTilt);
-    writeFloat(EPR_DELTA_TOWER_C_YTILT, Com::tDeltaTowerC_yTilt);
+    writeFloat(EPR_DELTA_TOWER_A_XTILT, Com::tDeltaTowerA_xTilt, 5);
+    writeFloat(EPR_DELTA_TOWER_A_YTILT, Com::tDeltaTowerA_yTilt, 5);
+    writeFloat(EPR_DELTA_TOWER_B_XTILT, Com::tDeltaTowerB_xTilt, 5);
+    writeFloat(EPR_DELTA_TOWER_B_YTILT, Com::tDeltaTowerB_yTilt, 5);
+    writeFloat(EPR_DELTA_TOWER_C_XTILT, Com::tDeltaTowerC_xTilt, 5);
+    writeFloat(EPR_DELTA_TOWER_C_YTILT, Com::tDeltaTowerC_yTilt, 5);
     writeFloat(EPR_DELTA_MAX_RADIUS, Com::tEPRDeltaMaxRadius);
 #else
     writeFloat(EPR_X_MAX_ACCEL, Com::tEPRXAcceleration);
