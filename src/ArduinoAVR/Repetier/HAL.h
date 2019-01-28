@@ -282,12 +282,108 @@ public:
     {}
     // return val*val
     static uint16_t integerSqrt(uint32_t a);
-    /** \brief Optimized division
 
+	/** \brief Optimized division byt 8 bit unsigned up to value of 127.
+	Timings are: 117,215,326,_ for 1,2,3,4 byte division respectively. This is compared
+	to about 614/670 ticks required for signed/unsigned int32 division.
+	Note: This works well only for b<128 because only 8 bit reminder is maintained.
+	*/
+	static inline int32_t Div4U1U(uint32_t a, uint8_t b)
+	{
+	#if CPU_ARCH==ARCH_AVR
+		// r15 remainder
+		// r16 counter
+		__asm__ (
+		"sub r15,r15 \n\t" // zero r15 and clear carry
+		"tst %D0 \n\t"
+		"brne d4B%= \n\t"
+		"tst %C0 \n\t"
+		"brne d3B%= \n\t"
+		"tst %B0 \n\t"
+		"brne d2B%= \n\t"
+	"d1B%=: "              // divide 8 bits
+		"ldi r16,9 \n\t"
+	"d1Ba%=: "
+		"rol %A0 \n\t"
+		"dec r16 \n\t"
+		"breq divE%= \n\t"
+		"rol r15 \n\t"
+		"sub r15,%A2 \n\t"
+		"brcc	d1Bb%= \n\t"
+		"add r15,%A2 \n\t"
+		"clc \n\t"
+		"rjmp d1Ba%= \n\t"
+	"d1Bb%=: "
+		"sec \n\t"
+		"rjmp d1Ba%= \n\t"
+	"d2B%=: "              // divide 16 bits
+		"ldi r16,17 \n\t"
+	"d2Ba%=: "
+		"rol %A0 \n\t"
+		"rol %B0 \n\t"
+		"dec r16 \n\t"
+		"breq	divE%= \n\t"
+		"rol r15 \n\t"
+		"sub r15,%A2 \n\t"
+		"brcc	d2Bb%= \n\t"
+		"add r15,%A2 \n\t"
+		"clc \n\t"
+		"rjmp d2Ba%= \n\t"
+	"d2Bb%=: "
+		"sec \n\t"
+		"rjmp d2Ba%= \n\t"
+	"d3B%=: "              // divide 24 bit
+		"ldi r16,25 \n\t"
+	"d3Ba%=: "
+		"rol %A0 \n\t"
+		"rol %B0 \n\t"
+		"rol %C0 \n\t"
+		"dec r16 \n\t"
+		"breq	divE%= \n\t"
+		"rol r15 \n\t"
+		"sub r15,%A2 \n\t"
+		"brcc	d3Bb%= \n\t"
+		"add r15,%A2 \n\t"
+		"clc \n\t"
+		"rjmp d3Ba%= \n\t"
+	"d3Bb%=: "
+		"sec \n\t"
+		"rjmp d3Ba%= \n\t"
+	"d4B%=: "              // divide full 32 bit
+		"ldi r16,33 \n\t"
+	"d4Ba%=: "
+		"rol %A0 \n\t"
+		"rol %B0 \n\t"
+		"rol %C0 \n\t"
+		"rol %D0 \n\t"
+		"dec r16 \n\t"
+		"breq	divE%= \n\t"
+		"rol r15 \n\t"
+		"sub r15,%A2 \n\t"
+		"brcc	d4Bb%= \n\t"
+		"add r15,%A2 \n\t"
+		"clc \n\t"
+		"rjmp d4Ba%= \n\t"
+	"d4Bb%=: "
+		"sec \n\t"
+		"rjmp d4Ba%= \n\t"
+	"divE%=: "             // end
+		:"=&r"(a)
+		:"0"(a),"r"(b)
+		:"r15", "r16"
+
+		);
+		return a;
+	#else
+		return a/b;
+	#endif
+	}
+
+    /** \brief Optimized division
     Normally the C compiler will compute a long/long division, which takes ~670 Ticks.
     This version is optimized for a 16 bit dividend and recognizes the special cases
     of a 24 bit and 16 bit dividend, which often, but not always occur in updating the
-    interval.
+    interval. The timings are about: 581, 277, 229 ticks for 4,3,2 byte division respectively.
     */
     static inline int32_t Div4U2U(uint32_t a,uint16_t b)
     {

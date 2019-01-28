@@ -118,8 +118,10 @@ int32_t HAL::CPUDivU2(unsigned int divisor) {
     unsigned short table;
     if(divisor < 8192) {
         if(divisor < 512) {
+            // These entries have overflows in lookuptable!
+            if(divisor >= 128) return Div4U2U(F_CPU, divisor);
             if(divisor < 10) divisor = 10;
-            return Div4U2U(F_CPU, divisor); // These entries have overflows in lookuptable!
+            return Div4U1U(F_CPU, static_cast<uint8_t>(divisor));
         }
         table = (unsigned short)&slow_div_lut[0];
         __asm__ __volatile__( // needs 64 ticks neu 49 Ticks

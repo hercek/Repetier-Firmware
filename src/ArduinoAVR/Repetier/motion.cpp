@@ -1645,14 +1645,14 @@ inline uint16_t PrintLine::calculateNonlinearSubSegments(uint8_t softEndstop) {
 #endif
 
     uint16_t maxAxisSteps = 0;
-    for (int s = numNonlinearSegments; s > 0; s--) {
+    for (uint8_t s = numNonlinearSegments; s > 0; s--) {
         NonlinearSegment *d = &segments[s - 1];
 
 #if (CPU_ARCH == ARCH_AVR) && !EXACT_DELTA_MOVES
         for(i = 0; i < Z_AXIS_ARRAY; i++) {
             // End of segment in Cartesian steps
 
-            // This method generates small waves which get larger with increasing number of delta segments. smaller?
+            // This method generates small waves with amplitude of up to 1 (micro)step -> not a big deal
             diff = Printer::destinationSteps[i] - destinationSteps[i];
             if(s == 1)
                 destinationSteps[i] += diff;
@@ -1661,14 +1661,14 @@ inline uint16_t PrintLine::calculateNonlinearSubSegments(uint8_t softEndstop) {
             else if(s == 4)
                 destinationSteps[i] += (diff >> 2);
             else if(diff < 0)
-                destinationSteps[i] -= HAL::Div4U2U(-diff, s);
+                destinationSteps[i] -= HAL::Div4U1U(-diff, s);
             else
-                destinationSteps[i] += HAL::Div4U2U(diff, s);
+                destinationSteps[i] += HAL::Div4U1U(diff, s); // takes about 120 ticks
         }
 #else
         float segment = static_cast<float>(numNonlinearSegments - s + 1);
         for(i = 0; i < Z_AXIS_ARRAY; i++) // End of segment in Cartesian steps
-            // Perfect approximation, but slower, so we limit it to faster processors like arm
+            // Perfect approximation, but slower (it takes about 333 ticks), so we limit it to faster processors like arm
             destinationSteps[i] = static_cast<int32_t>(floor(0.5 + dx[i] * segment)) + Printer::currentPositionSteps[i];
 #endif
         // Verify that delta calculation has a solution
