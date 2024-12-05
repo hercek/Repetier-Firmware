@@ -141,10 +141,10 @@ have problems with other modules using the eeprom */
 #define EPR_PARK_Z                            1064
 
 // Horizontal Scaling
-#define EPR_HORIZSCALING_XX			1068
-#define EPR_HORIZSCALING_YX			1072
-#define EPR_HORIZSCALING_XY			1076
-#define EPR_HORIZSCALING_YY			1080
+#define EPR_HORIZSCALING_XX                   1076
+#define EPR_HORIZSCALING_YX                   1080
+#define EPR_HORIZSCALING_XY                   1084
+#define EPR_HORIZSCALING_YY                   1088
 
 
 #if EEPROM_MODE != 0
